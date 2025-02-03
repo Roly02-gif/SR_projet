@@ -32,6 +32,14 @@ impl Game {
         self.player_list.push(player);
     }
     
+    pub fn delete_player(&mut self,id_player: i32)-> &mut Game{
+        for i in 0..self.player_list.len() {
+            if self.player_list[i].get_id_player() == id_player {
+                self.player_list.remove(i);
+            }
+        }
+        return self;
+    }
     pub fn get_players(&self) -> &Vec<player::Player> {
         return &self.player_list;
     } 
@@ -46,7 +54,27 @@ impl Game {
         None
     }
 
+    fn restart_game(&mut self) {
+        self.sweets.clear();
+        
+        for _ in 0..self.player_list.iter().len() {
+            self.add_sweets();
+        }
+        for player in self.player_list.iter_mut() {
+            player.reset_score(); 
+            player.update_position(rand::rng().random_range(100.0..=800.0), rand::rng().random_range(100.0..=600.0));
+        }
+        self.start = true;   
+    }
+
     pub fn update_player_position(&mut self, id_player: i32, cmd: &str) {
+        if cmd == "restart" {
+            if !self.start {
+                self.restart_game();
+            }
+            return;
+        }
+
         let player_list_clone = self.player_list.clone();
         if let Some(player) = self.player_list.iter_mut().find(|p| p.get_id_player() == id_player) {
             let current_x = player.get_x();
@@ -94,7 +122,8 @@ impl Game {
             } else {
                 eprintln!("Collision entre joueurs détectée, déplacement annulé pour le joueur {}", id_player);
             }
-            
+
+
             self.sweets.retain(|sweet| {
                 let dx = sweet.get_x() - player.get_x();
                 let dy = sweet.get_y() - player.get_y();
