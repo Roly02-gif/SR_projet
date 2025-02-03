@@ -21,10 +21,13 @@ async fn main() -> io::Result<()>  {
     //Waiting for connection
     loop {
         match listener.accept() {
-            Ok((socket, addr)) => {
+            Ok((mut socket, addr)) => {
                 println!("new client: {:?}", addr);
                 id_player +=1;
+                if let Err(e) = socket.write_all(id_player.to_string().as_bytes()) {
 
+                    eprintln!("Erreur lors de l'envoi du message : {:?}", e);
+                }
                 // Ajouter le socket à la liste partagée
                 let socket_clone = socket.try_clone()?;
                 {
@@ -63,23 +66,20 @@ fn handle_connection(id_player: i32, mut socket: TcpStream, game: Arc<std::sync:
                     let message = String::from_utf8_lossy(&buffer[..size]);
                     let game_lock = game.lock().unwrap();
                     let game_state = exec_cmd(message, id_player, game_lock);
-                    let game_clone=game.clone();
                     let sockets_clone=sockets.clone();
                     //serialize game state to JSON
                     let response = serde_json::to_string(&*game_state).unwrap();
-                    //println!("Message reçu de {:?}", response);
 
-                    broadcast_state_game(game_clone, sockets_clone, response);
+                    broadcast_state_game(sockets_clone, response);
                     
                 }
                 Err(e) => {
                     eprintln!("Erreur lors de la lecture depuis {:?} : {}", client_addr, e);
-                    if(e.to_string()=="Une connexion existante a dû être fermée par l’hôte distant. (os error 10054)"){
+                    if e.to_string()=="Une connexion existante a dû être fermée par l’hôte distant. (os error 10054)" {
                         let mut game_lock = game.lock().unwrap();
-                        let game_clone=game.clone();
                         let game_=game_lock.delete_player(id_player);
                         let response = serde_json::to_string(&*game_).unwrap();
-                        broadcast_state_game(game_clone, sockets, response);
+                        broadcast_state_game(sockets, response);
                     }
                     break;
                 }
@@ -89,7 +89,7 @@ fn handle_connection(id_player: i32, mut socket: TcpStream, game: Arc<std::sync:
 
 }
 
-fn broadcast_state_game(game: Arc<std::sync::Mutex<Game>>, sockets: Arc<Mutex<Vec<TcpStream>>>,response: String ){
+fn broadcast_state_game(sockets: Arc<Mutex<Vec<TcpStream>>>,response: String ){
     // Diffuser le message à tous les sockets
     let sockets_guard = sockets.lock().unwrap();
     for mut client_socket in sockets_guard.iter() {
