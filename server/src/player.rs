@@ -41,6 +41,11 @@ impl Player {
     pub fn get_y(&self) -> f64 {
         return self.pos_y;
     }
+
+    pub fn get_score(&self) -> i32 {
+        return self.score;
+    }
+
     pub fn reset_score(&mut self){
         self.score=0;
     }
