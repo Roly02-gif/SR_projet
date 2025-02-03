@@ -20,9 +20,10 @@ sock.connect((SERVER_IP, SERVER_PORT))
 
 
 # Global variables for game state
+num_player=-1
 players = []
 sweets = []
-player_id = None
+player_id = 0
 player_score = 0
 in_menu = True  # State to check if in menu
 in_end_screen = False  # State to check if in end screen
@@ -34,14 +35,24 @@ def receive_data():
             data = sock.recv(1024).decode()
             if not data:
                 break
+            
+            if data.find("{")==-1:
+                print(data)
+                player_id = data
+                continue
+           
             game_state = json.loads(data)
             players = game_state["player_list"]
             sweets = game_state["sweets"]
-
+            print(players)
             if player_id is not None:
                 for player in players:
-                    if player["id_player"] == player_id:
+                    print(int(player["id_player"]) == int(player_id))
+                    print(player["id_player"])
+                    print(player_id)
+                    if int(player["id_player"]) == int(player_id):
                         player_score = player["score"]
+                        print(player_score)
                         break
             if(in_end_screen):
                 if  game_state.get("start", True):
