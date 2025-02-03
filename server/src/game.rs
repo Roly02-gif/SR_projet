@@ -58,19 +58,21 @@ impl Game {
                 _ => eprintln!("Invalid command: {}", cmd),
             }
 
-            if !self.sweets.is_empty() {
-                for sweet_idx in 0..self.sweets.len() {
-                    let sweet = self.sweets[sweet_idx];
-                    let dx = sweet.get_x() - player.get_x();
-                    let dy = sweet.get_y() - player.get_y();
-                    let dist = ((dx*dx) + (dy*dy)).sqrt();
-                    if dist <= 1.0 {
-                        self.sweets.remove(sweet_idx);
-                        player.update_score();
-                        
-                        println!("{:?}", serde_json::to_string(&*self.sweets).unwrap());
-                    }
+            self.sweets.retain(|sweet| {
+                let dx = sweet.get_x() - player.get_x();
+                let dy = sweet.get_y() - player.get_y();
+                let distance = (dx * dx + dy * dy).sqrt();
+                if distance < 10.0 {
+                    player.update_score();
+                    false // Remove sweet
+                } else {
+                    true // Keep sweet
                 }
+            });
+
+            // Game over (no sweets)
+            if self.sweets.is_empty() {
+                self.start = false;
             }
             
 
