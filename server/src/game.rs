@@ -54,7 +54,7 @@ impl Game {
         None
     }
 
-    fn restart_game(&mut self) {
+    pub fn restart_game(&mut self) {
         self.sweets.clear();
         
         for _ in 0..self.player_list.iter().len() {
@@ -143,7 +143,7 @@ impl Game {
             
 
         } else {
-            eprintln!("Player with address {:?} not found", id_player);
+            eprintln!("Player with id {:?} not found", id_player);
         }
 
     }
@@ -153,6 +153,10 @@ impl Game {
             let new_sweet = Sweet::new(rand::rng().random_range(100.0..=800.0), rand::rng().random_range(100.0..=600.0));
             self.sweets.push(new_sweet);
         }
+    }
+
+    pub fn get_sweets(&self) -> &Vec<sweet::Sweet> {
+        return &self.sweets;
     }
 
 

@@ -89,7 +89,7 @@ fn handle_connection(id_player: i32, mut socket: TcpStream, game: Arc<std::sync:
 
 }
 
-fn broadcast_state_game(sockets: Arc<Mutex<Vec<TcpStream>>>,response: String ){
+pub fn broadcast_state_game(sockets: Arc<Mutex<Vec<TcpStream>>>,response: String ){
     // Diffuser le message à tous les sockets
     let sockets_guard = sockets.lock().unwrap();
     eprintln!("{:?}",response);
@@ -99,7 +99,7 @@ fn broadcast_state_game(sockets: Arc<Mutex<Vec<TcpStream>>>,response: String ){
         }
     }
 }
-fn exec_cmd<'a>(message : Cow<'a, str>, id_player: i32, mut game: std::sync::MutexGuard<'a, Game>) -> std::sync::MutexGuard<'a, Game> {
+pub fn exec_cmd<'a>(message : Cow<'a, str>, id_player: i32, mut game: std::sync::MutexGuard<'a, Game>) -> std::sync::MutexGuard<'a, Game> {
     let str_message = message.into_owned();
     match str_message.as_str() {
         "up" => {
