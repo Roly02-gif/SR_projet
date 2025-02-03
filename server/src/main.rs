@@ -24,7 +24,7 @@ async fn main() -> io::Result<()>  {
             Ok((mut socket, addr)) => {
                 println!("new client: {:?}", addr);
                 id_player +=1;
-                if let Err(e) = socket.write_all(id_player.to_string().as_bytes()) {
+                if let Err(e) = socket.write_all(format!("{}\n",id_player.to_string()).as_bytes()) {
 
                     eprintln!("Erreur lors de l'envoi du message : {:?}", e);
                 }
@@ -68,7 +68,7 @@ fn handle_connection(id_player: i32, mut socket: TcpStream, game: Arc<std::sync:
                     let game_state = exec_cmd(message, id_player, game_lock);
                     let sockets_clone=sockets.clone();
                     //serialize game state to JSON
-                    let response = serde_json::to_string(&*game_state).unwrap();
+                    let response = format!("{}\n",serde_json::to_string(&*game_state).unwrap());
 
                     broadcast_state_game(sockets_clone, response);
                     
@@ -78,7 +78,7 @@ fn handle_connection(id_player: i32, mut socket: TcpStream, game: Arc<std::sync:
                     if e.to_string()=="Une connexion existante a dû être fermée par l’hôte distant. (os error 10054)" {
                         let mut game_lock = game.lock().unwrap();
                         let game_=game_lock.delete_player(id_player);
-                        let response = serde_json::to_string(&*game_).unwrap();
+                        let response = format!("{}\n", serde_json::to_string(&*game).unwrap());
                         broadcast_state_game(sockets, response);
                     }
                     break;
@@ -92,6 +92,7 @@ fn handle_connection(id_player: i32, mut socket: TcpStream, game: Arc<std::sync:
 fn broadcast_state_game(sockets: Arc<Mutex<Vec<TcpStream>>>,response: String ){
     // Diffuser le message à tous les sockets
     let sockets_guard = sockets.lock().unwrap();
+    eprintln!("{:?}",response);
     for mut client_socket in sockets_guard.iter() {
         if let Err(e) = client_socket.write_all(response.as_bytes()) {
             eprintln!("Erreur lors de l'envoi du message : {:?}", e);

@@ -30,36 +30,39 @@ already_end_screen = False
 
 def receive_data():
     global players, sweets, player_id, player_score, in_end_screen
+    buffer = ""
     while True:
         try:
             data = sock.recv(1024).decode()
             if not data:
                 break
             
-            if data.find("{") == -1:
-                print(data)
-                player_id = data
-                continue
-           
-            game_state = json.loads(data)
-            players = game_state["player_list"]
-            sweets = game_state["sweets"]
-            print(players)
-            if player_id is not None:
-                for player in players:
-                    print(int(player["id_player"]) == int(player_id))
-                    print(player["id_player"])
-                    print(player_id)
-                    if int(player["id_player"]) == int(player_id):
-                        player_score = player["score"]
-                        print(player_score)
-                        break
-            if in_end_screen:
-                if game_state.get("start", True):
-                    in_end_screen = False
-            if not game_state.get("start", True):
-                if not already_end_screen:
-                    in_end_screen = True
+            buffer += data
+            while "\n" in buffer:
+                message, buffer = buffer.split("\n", 1)
+                
+                if message.find("{") == -1:
+                    print(message)
+                    player_id = message
+                    continue
+                
+                print(message)
+                game_state = json.loads(message)
+                players = game_state["player_list"]
+                sweets = game_state["sweets"]
+                
+                if player_id is not None:
+                    for player in players:
+                        if int(player["id_player"]) == int(player_id):
+                            player_score = player["score"]
+                            break
+                
+                if in_end_screen:
+                    if game_state.get("start", True):
+                        in_end_screen = False
+                if not game_state.get("start", True):
+                    if not already_end_screen:
+                        in_end_screen = True
         except json.JSONDecodeError as e:
             print(f"Error decoding JSON: {e}")
         except Exception as e:
