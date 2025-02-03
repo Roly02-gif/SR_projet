@@ -17,7 +17,7 @@ font = pygame.font.Font(None, 36)  # Police pour afficher le score
 # Socket setup
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((SERVER_IP, SERVER_PORT))
-
+sock.send("init".encode())
 # Global variables for game state
 players = []
 sweets = []
@@ -61,11 +61,11 @@ while running:
     keys = pygame.key.get_pressed()
     if keys[pygame.K_UP]:
         sock.send("up".encode())
-    elif keys[pygame.K_DOWN]:
+    if keys[pygame.K_DOWN]:
         sock.send("down".encode())
-    elif keys[pygame.K_LEFT]:
+    if keys[pygame.K_LEFT]:
         sock.send("left".encode())
-    elif keys[pygame.K_RIGHT]:
+    if keys[pygame.K_RIGHT]:
         sock.send("right".encode())
 
     # Draw everything
