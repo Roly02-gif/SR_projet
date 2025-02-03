@@ -47,17 +47,54 @@ impl Game {
     }
 
     pub fn update_player_position(&mut self, id_player: i32, cmd: &str) {
+        let player_list_clone = self.player_list.clone();
         if let Some(player) = self.player_list.iter_mut().find(|p| p.get_id_player() == id_player) {
-            let pos_x = player.get_x();
-            let pos_y = player.get_y();
+            let current_x = player.get_x();
+            let current_y = player.get_y();
+            let mut new_x = current_x;
+            let mut new_y = current_y;
+            let step = 5.0;
+
             match cmd {
-                "up" => player.update_position(pos_x, pos_y - 5.0),
-                "down" => player.update_position(pos_x, pos_y + 5.0),
-                "left" => player.update_position(pos_x - 5.0, pos_y),
-                "right" => player.update_position(pos_x + 5.0, pos_y),
+                "up" => new_y -= step,
+                "down" => new_y += step,
+                "left" => new_x -= step,
+                "right" => new_x += step,
                 _ => eprintln!("Invalid command: {}", cmd),
             }
+            
+            let collision_radius = 10.0;
+            let screen_width = 800.0;
+            let screen_height = 600.0;
+            
+            if new_x < collision_radius {
+                new_x = collision_radius;
+            } else if new_x > screen_width - collision_radius {
+                new_x = screen_width - collision_radius;
+            }
+            if new_y < collision_radius {
+                new_y = collision_radius;
+            } else if new_y > screen_height - collision_radius {
+                new_y = screen_height - collision_radius;
+            }
 
+            let collision_detected = player_list_clone.iter().any(|other| {
+                if other.get_id_player() != id_player {
+                    let dx = new_x - other.get_x();
+                    let dy = new_y - other.get_y();
+                    let distance = (dx * dx + dy * dy).sqrt();
+                    distance < (collision_radius * 2.0)
+                } else {
+                    false
+                }
+            });
+
+            if !collision_detected {
+                player.update_position(new_x, new_y);
+            } else {
+                eprintln!("Collision entre joueurs détectée, déplacement annulé pour le joueur {}", id_player);
+            }
+            
             self.sweets.retain(|sweet| {
                 let dx = sweet.get_x() - player.get_x();
                 let dy = sweet.get_y() - player.get_y();
