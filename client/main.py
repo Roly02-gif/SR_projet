@@ -18,16 +18,16 @@ font = pygame.font.Font(None, 36)
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((SERVER_IP, SERVER_PORT))
 
-
 # Global variables for game state
-num_player=-1
+num_player = -1
 players = []
 sweets = []
 player_id = 0
 player_score = 0
 in_menu = True  # State to check if in menu
 in_end_screen = False  # State to check if in end screen
-already_end_screen=False
+already_end_screen = False
+
 def receive_data():
     global players, sweets, player_id, player_score, in_end_screen
     while True:
@@ -36,7 +36,7 @@ def receive_data():
             if not data:
                 break
             
-            if data.find("{")==-1:
+            if data.find("{") == -1:
                 print(data)
                 player_id = data
                 continue
@@ -54,11 +54,11 @@ def receive_data():
                         player_score = player["score"]
                         print(player_score)
                         break
-            if(in_end_screen):
-                if  game_state.get("start", True):
-                     in_end_screen=False
+            if in_end_screen:
+                if game_state.get("start", True):
+                    in_end_screen = False
             if not game_state.get("start", True):
-                if(not already_end_screen):
+                if not already_end_screen:
                     in_end_screen = True
         except json.JSONDecodeError as e:
             print(f"Error decoding JSON: {e}")
@@ -81,9 +81,33 @@ def draw_menu():
     
     return play_button
 
+def get_winner():
+    max_score = -1
+    winner_id = -1
+    for player in players:
+        if player["score"] > max_score:
+            max_score = player["score"]
+            winner_id = player["id_player"]
+    return winner_id, max_score
+
+def has_highest_score():
+    """
+    Vérifie si le joueur actuel a le score le plus élevé.
+    """
+    if not players:
+        return False
+    max_score = max(player["score"] for player in players)
+    return player_score == max_score
+
 def draw_end_screen():
     screen.fill((0, 0, 0))
-    end_text = font.render("Game Over!", True, (255, 255, 255))
+    winner_id, max_score = get_winner()
+    
+    if int(winner_id) == int(player_id):
+        end_text = font.render("Vous avez gagné!", True, (255, 255, 255))
+    else:
+        end_text = font.render(f"Vous avez perdu! Le gagnant est le joueur {winner_id}", True, (255, 255, 255))
+    
     screen.blit(end_text, (WIDTH // 2 - end_text.get_width() // 2, HEIGHT // 3))
     
     restart_button = pygame.Rect(WIDTH // 2 - 75, HEIGHT // 2, 150, 50)
@@ -116,11 +140,11 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if restart_button.collidepoint(event.pos):
                     sock.send("restart".encode())
-                    already_end_screen=False
+                    already_end_screen = False
                     in_end_screen = False
                     in_menu = False
     else:
-        already_end_screen=False
+        already_end_screen = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -142,14 +166,22 @@ while running:
         for player in players:
             x = int(player["pos_x"])
             y = int(player["pos_y"])
-            pygame.draw.circle(screen, (255, 0, 0), (x, y), 10)
+            # Dessiner le joueur actuel en blanc, les autres en rouge
+            if int(player["id_player"]) == int(player_id):
+                pygame.draw.circle(screen, (255, 255, 255), (x, y), 10)  
+            else:
+                pygame.draw.circle(screen, (255, 0, 0), (x, y), 10)  
 
         for sweet in sweets:
             x = int(sweet["pos_x"])
             y = int(sweet["pos_y"])
             pygame.draw.circle(screen, (0, 255, 0), (x, y), 5)
         
-        score_text = font.render(f"Score: {player_score}", True, (255, 255, 255))
+        # Afficher le score en jaune si le joueur a le meilleur score, sinon en blanc
+        if has_highest_score():
+            score_text = font.render(f"Score: {player_score}", True, (255, 255, 0)) 
+        else:
+            score_text = font.render(f"Score: {player_score}", True, (255, 255, 255)) 
         screen.blit(score_text, (10, 10))
         
         pygame.display.flip()
