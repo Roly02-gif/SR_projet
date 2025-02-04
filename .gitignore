@@ -1,3 +1,5 @@
 /server/target
 /server/Cargo.lock
 /.idea
+/test_charge_server/target
+/test_charge_server/Cargo.lock
